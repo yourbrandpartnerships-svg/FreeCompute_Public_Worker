@@ -1,0 +1,37 @@
+name: FreeCompute Public Worker
+run-name: FreeCompute Public Worker ${{ inputs.freecompute_marker }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      freecompute_marker:
+        description: Internal FreeCompute marker
+        required: true
+        type: string
+      payload:
+        description: Public payload to hash
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  public-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Bounded public hash operation
+        shell: python
+        env:
+          FC_MARKER: ${{ inputs.freecompute_marker }}
+          FC_PAYLOAD: ${{ inputs.payload }}
+        run: |
+          import hashlib, os
+          marker=os.environ["FC_MARKER"]
+          payload=os.environ.get("FC_PAYLOAD","")
+          if len(payload)>8192:
+              raise SystemExit("payload too large")
+          digest=hashlib.sha256(payload.encode()).hexdigest()
+          print(f"FREECOMPUTE_PUBLIC_WORKER_OK:{marker}:{digest}")
