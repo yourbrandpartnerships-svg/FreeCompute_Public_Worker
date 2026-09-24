@@ -1,0 +1,24 @@
+name: FreeCompute Public Provider Canary
+run-name: FreeCompute provider canary ${{ inputs.nonce }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      nonce:
+        description: Internal FreeCompute marker
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Verify bounded public runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "FREECOMPUTE_ACTIONS_CANARY_OK:${{ inputs.nonce }}"
