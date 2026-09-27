@@ -1,0 +1,79 @@
+name: V8 Cloud Accelerator
+
+on:
+  push:
+    branches:
+      - main
+      - feature/v8-cloud-accelerator-20260927
+    paths:
+      - scripts/v8_cloud_accelerator.py
+      - state/v8_cloud_rotation.json
+      - .github/workflows/v8-cloud-accelerator.yml
+  schedule:
+    - cron: "11 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v8-cloud-accelerator
+  cancel-in-progress: true
+
+jobs:
+  accelerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      FC_KAGGLE_OWNER_API_TOKEN: ${{ secrets.FC_KAGGLE_OWNER_API_TOKEN }}
+      FC_KAGGLE_OWNER_USERNAME: ${{ secrets.FC_KAGGLE_OWNER_USERNAME }}
+      FC_KAGGLE_COLLAB1_API_TOKEN: ${{ secrets.FC_KAGGLE_COLLAB1_API_TOKEN }}
+      FC_KAGGLE_COLLAB1_USERNAME: ${{ secrets.FC_KAGGLE_COLLAB1_USERNAME }}
+      FC_KAGGLE_COLLAB2_API_TOKEN: ${{ secrets.FC_KAGGLE_COLLAB2_API_TOKEN }}
+      FC_KAGGLE_COLLAB2_USERNAME: ${{ secrets.FC_KAGGLE_COLLAB2_USERNAME }}
+
+    steps:
+      - name: Checkout public worker
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Install bounded Kaggle tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --quiet "kaggle>=1.8,<2"
+
+      - name: Run public CPU plus quota-gated Kaggle GPU acceleration
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/v8_cloud_accelerator.py
+
+      - name: Persist sanitized accelerator evidence
+        if: github.ref_name == 'main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "freecompute-cloud-worker"
+          git config user.email "freecompute-cloud-worker@users.noreply.github.com"
+          git add state/v8_cloud_rotation.json evidence/v8-cloud/latest.json
+          if git diff --cached --quiet; then
+            echo "No accelerator state/evidence change."
+            exit 0
+          fi
+          git commit -m "evidence: refresh V8 cloud accelerator"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Upload run evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v8-cloud-accelerator-${{ github.run_id }}
+          path: |
+            evidence/v8-cloud/latest.json
+            state/v8_cloud_rotation.json
+          retention-days: 14
+          if-no-files-found: warn
