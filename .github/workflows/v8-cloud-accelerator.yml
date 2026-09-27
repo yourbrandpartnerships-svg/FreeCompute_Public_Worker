@@ -7,7 +7,6 @@ on:
       - feature/v8-cloud-accelerator-20260927
     paths:
       - scripts/v8_cloud_accelerator.py
-      - state/v8_cloud_rotation.json
       - .github/workflows/v8-cloud-accelerator.yml
   schedule:
     - cron: "11 * * * *"
