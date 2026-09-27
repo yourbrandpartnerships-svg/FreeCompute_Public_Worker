@@ -1,8 +1,8 @@
 {
   "authoritative_merge_gate": false,
-  "generated_at": "2026-09-27T05:48:39.441722+00:00",
+  "generated_at": "2026-09-27T05:50:22.711428+00:00",
   "github_hosted_cpu": {
-    "elapsed_seconds": 0.08232604599999149,
+    "elapsed_seconds": 0.08244403599999828,
     "paid_compute_used": false,
     "pass_rate": 1.0,
     "private_source_used": false,
@@ -37,7 +37,8 @@
     "passes": 0,
     "reserve_fraction": 0.15,
     "results": [],
-    "skips": 0
+    "skips": 0,
+    "target_training_seconds_per_lane": 240
   },
   "paid_compute_used": false,
   "private_source_used": false,
@@ -48,7 +49,7 @@
     "next_index": 0,
     "selected_lanes": []
   },
-  "run_id": "36298249171",
+  "run_id": "36298343872",
   "schema_version": 1,
   "scope": "SHOREA_V8_CP3_PLUS_SUPPORT_ONLY",
   "source": "FREECOMPUTE_PUBLIC_WORKER",
