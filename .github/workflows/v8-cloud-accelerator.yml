@@ -57,14 +57,37 @@ jobs:
           set -euo pipefail
           git config user.name "freecompute-cloud-worker"
           git config user.email "freecompute-cloud-worker@users.noreply.github.com"
-          git add state/v8_cloud_rotation.json evidence/v8-cloud/latest.json
-          if git diff --cached --quiet; then
-            echo "No accelerator state/evidence change."
-            exit 0
-          fi
-          git commit -m "evidence: refresh V8 cloud accelerator"
-          git pull --rebase origin main
-          git push origin HEAD:main
+
+          mkdir -p "$RUNNER_TEMP/v8-evidence-sync/state" "$RUNNER_TEMP/v8-evidence-sync/evidence/v8-cloud"
+          cp state/v8_cloud_rotation.json "$RUNNER_TEMP/v8-evidence-sync/state/v8_cloud_rotation.json"
+          cp evidence/v8-cloud/latest.json "$RUNNER_TEMP/v8-evidence-sync/evidence/v8-cloud/latest.json"
+
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+
+            mkdir -p state evidence/v8-cloud
+            cp "$RUNNER_TEMP/v8-evidence-sync/state/v8_cloud_rotation.json" state/v8_cloud_rotation.json
+            cp "$RUNNER_TEMP/v8-evidence-sync/evidence/v8-cloud/latest.json" evidence/v8-cloud/latest.json
+
+            git add state/v8_cloud_rotation.json evidence/v8-cloud/latest.json
+            if git diff --cached --quiet; then
+              echo "No accelerator state/evidence change."
+              exit 0
+            fi
+
+            git commit -m "evidence: refresh V8 cloud accelerator"
+            if git push origin HEAD:main; then
+              echo "V8_CLOUD_EVIDENCE_PERSISTED=PASS"
+              exit 0
+            fi
+
+            echo "Push raced with a newer main commit; retrying from latest origin/main."
+            sleep $((attempt * 2))
+          done
+
+          echo "Unable to persist cloud evidence after three race-safe attempts." >&2
+          exit 1
 
       - name: Upload run evidence
         if: always()
