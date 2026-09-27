@@ -1,8 +1,7 @@
 {
-  "last_run_id": "36357157728",
-  "last_selected_lanes": [],
-  "last_selected_workloads": [],
-  "mode": "ROUND_ROBIN_NEW_TASKS_ONLY",
-  "next_index": 0,
-  "updated_at": "2026-09-27T22:59:45.609734+00:00"
+  "last_artifact_hash": "01f5fba22493fe41bb9f8d510c3a8429ae3a6dfecba23775aead406648aa19a4",
+  "last_run_id": "36358947056",
+  "last_status": "PASS_CPU_ONLY",
+  "mode": "PUBLIC_SYNTHETIC_CPU_ONLY",
+  "updated_at": "2026-09-27T23:30:58.796669+00:00"
 }

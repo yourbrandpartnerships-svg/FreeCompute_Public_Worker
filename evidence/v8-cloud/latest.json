@@ -1,8 +1,20 @@
 {
+  "artifact_hash": "01f5fba22493fe41bb9f8d510c3a8429ae3a6dfecba23775aead406648aa19a4",
   "authoritative_merge_gate": false,
-  "generated_at": "2026-09-27T22:59:45.610055+00:00",
+  "candidate_binding": "SHA_INDEPENDENT_SYNTHETIC_FAMILY",
+  "candidate_sha": null,
+  "checkpoint": "MULTI_CP3_PLUS",
+  "confidence_interval": {
+    "level": 0.95,
+    "lower": 0.9999807930748096,
+    "method": "wilson"
+  },
+  "cpu_count": 4,
+  "credential_boundary": "NO_PROVIDER_CREDENTIALS",
+  "expires_at": "2026-09-28T02:30:58.796669+00:00",
+  "generated_at": "2026-09-27T23:30:58.796669+00:00",
   "github_hosted_cpu": {
-    "elapsed_seconds": 0.1920337799999956,
+    "elapsed_seconds": 0.18931751800002417,
     "families": [
       {
         "checkpoint": "V8-CP3",
@@ -78,48 +90,29 @@
     "wilson_lower_95": 0.9999807930748096,
     "workload": "PUBLIC_SYNTHETIC_CP3_PLUS_EVIDENCE_FARM"
   },
-  "kaggle_gpu": {
-    "accelerator": "NvidiaTeslaT4",
-    "credential_presence": {
-      "collab-1": {
-        "api_token_configured": false,
-        "eligible_for_attempt": false,
-        "username_secret_configured": false
-      },
-      "collab-2": {
-        "api_token_configured": false,
-        "eligible_for_attempt": false,
-        "username_secret_configured": false
-      },
-      "owner": {
-        "api_token_configured": false,
-        "eligible_for_attempt": false,
-        "username_secret_configured": false
-      }
-    },
-    "failures": 0,
-    "max_runtime_seconds_per_lane": 600,
-    "min_post_run_hours": 0.5,
-    "passes": 0,
-    "reserve_fraction": 0.15,
-    "results": [],
-    "skips": 0,
-    "target_training_seconds_per_lane": 420
-  },
+  "gpu_count": 0,
+  "gpu_verified": false,
   "paid_compute_used": false,
+  "pass_rate": 1.0,
   "private_source_used": false,
-  "rotation": {
-    "automatic_identity_failover": false,
-    "identity_assignment_for_new_tasks_only": true,
-    "mode": "ROUND_ROBIN_NEW_TASKS_ONLY",
-    "next_index": 0,
-    "selected_lanes": []
+  "provider_compute": {
+    "authority": "FREECOMPUTE_ONLY",
+    "kaggle_direct_submission": false,
+    "note": "This public worker never authenticates to a provider. GPU/provider support evidence must be produced by FreeCompute and ingested through a separate bounded support-evidence path.",
+    "provider_credentials_present": false
   },
-  "run_id": "36357157728",
-  "schema_version": 1,
+  "public_worker_sha": "c5103ef7c132fc46add4ce33f4d1dadf9910a380",
+  "quota_after": null,
+  "quota_before": null,
+  "run_id": "36358947056",
+  "runtime_type": "GITHUB_HOSTED_PUBLIC_CPU",
+  "scenario_count": 200000,
+  "schema_version": 2,
   "scope": "SHOREA_V8_CP3_PLUS_SUPPORT_ONLY",
   "source": "FREECOMPUTE_PUBLIC_WORKER",
-  "status": "PASS_CPU_GPU_BLOCKED",
+  "status": "PASS_CPU_ONLY",
+  "support_only": true,
+  "workload_family": "PUBLIC_SYNTHETIC_CP3_PLUS_EVIDENCE_FARM",
   "workload_farm": {
     "families": [
       {
@@ -154,9 +147,7 @@
         "checkpoint": "V8-CP10",
         "workload": "evidence_monitoring_decay"
       }
-    ],
-    "next_workload_index": 0,
-    "selected_gpu_workloads": []
+    ]
   },
   "zero_spend_required": true
 }
