@@ -1,31 +1,34 @@
 # FreeCompute Public Worker
 
-This repository is intentionally public and contains only bounded GitHub Actions workflows used by the independent FreeCompute service.
+This repository is intentionally public and contains only bounded GitHub Actions workflows used as a sanitized public/synthetic support lane for the independent FreeCompute + SHOREA architecture.
 
-It contains no SHOREA source code, provider credentials, private datasets, arbitrary shell execution, or paid-runner configuration.
+It contains no SHOREA private source code, provider credentials, private datasets, arbitrary shell execution, or paid-runner configuration.
 
-## V8 cloud accelerator
+## V8 public evidence farm
 
-The repository also runs the SHOREA V8 public support accelerator on GitHub-hosted `ubuntu-latest`.
+The V8 cloud worker runs checkpoint-aware synthetic CPU evidence on GitHub-hosted ubuntu-latest.
 
-- GitHub-hosted CPU support runs every 30 minutes.
-- Kaggle GPU support is optional and fail-closed until an encrypted Actions secret is configured.
-- Kaggle uses `ROUND_ROBIN_NEW_TASKS_ONLY` semantics across the configured identity lanes.
-- The worker reads live Kaggle GPU quota before dispatch and preserves a reserve.
-- No SHOREA private source, customer data, provider secret, or paid compute path is placed in this public repository.
+Current workload families are V8-CP3 agent_provider_learning, V8-CP4 revenue_product_ranking, V8-CP5 market_reputation_trend, V8-CP6 ops_truth_reconciliation, V8-CP7 failure_anomaly_hardening, V8-CP8 canary_incrementality, V8-CP9 reconciliation_drift, and V8-CP10 evidence_monitoring_decay.
 
-### One-time Kaggle GPU activation
+The worker produces support-only evidence with scenario counts, pass rate, Wilson 95% lower bound, runtime metadata, SHA-independent applicability, expiration, and an artifact hash.
 
-In this repository, open **Settings → Secrets and variables → Actions → New repository secret**.
+## Provider-compute boundary
 
-Add at least one of:
+FreeCompute is the sole provider-compute authority.
 
-- `FC_KAGGLE_OWNER_API_TOKEN`
-- `FC_KAGGLE_COLLAB1_API_TOKEN`
-- `FC_KAGGLE_COLLAB2_API_TOKEN`
+This public repository does not authenticate to Kaggle and does not hold Kaggle owner/collaborator tokens. It does not select provider identities, read provider quota, launch provider notebooks, retry provider jobs, or retrieve provider artifacts.
 
-Optional username secrets are also accepted, but the cloud worker attempts to derive the Kaggle username from the authenticated API token.
+Kaggle CPU/GPU routing, identity isolation, quota reserve, CUDA verification, retries/backpressure, and provider artifacts belong to the private FreeCompute control plane in yourbrandpartnerships-svg/Free_VM_GPU.
 
-Do not commit API-token values to Git or place them in workflow inputs, logs, issues, or artifacts.
+Any sanitized provider-compute evidence that SHOREA consumes must arrive through FreeCompute's bounded evidence path. Public-worker evidence can strengthen checkpoint confidence but is never an authoritative merge/transition gate.
 
-Once a token is present, no Windows runner or PowerShell startup is required. The scheduled cloud workflow detects the token automatically, checks live GPU quota, and runs bounded Kaggle GPU support work when the reserve gate allows it.
+## Safety properties
+
+- public/synthetic inputs only
+- no provider credentials
+- no private SHOREA source
+- no paid compute path
+- no automatic card-backed fallback
+- support_only is true
+- authoritative_merge_gate is false
+- GPU is never claimed by this worker

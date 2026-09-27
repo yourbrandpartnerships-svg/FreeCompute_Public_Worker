@@ -5,9 +5,11 @@ on:
     branches:
       - main
       - feature/v8-cloud-accelerator-20260927
+      - fix/v8-public-worker-freecompute-boundary-20260928
     paths:
       - scripts/v8_cloud_accelerator.py
       - .github/workflows/v8-cloud-accelerator.yml
+      - README.md
   schedule:
     - cron: "11,41 * * * *"
   workflow_dispatch:
@@ -22,14 +24,7 @@ concurrency:
 jobs:
   accelerate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      FC_KAGGLE_OWNER_API_TOKEN: ${{ secrets.FC_KAGGLE_OWNER_API_TOKEN }}
-      FC_KAGGLE_OWNER_USERNAME: ${{ secrets.FC_KAGGLE_OWNER_USERNAME }}
-      FC_KAGGLE_COLLAB1_API_TOKEN: ${{ secrets.FC_KAGGLE_COLLAB1_API_TOKEN }}
-      FC_KAGGLE_COLLAB1_USERNAME: ${{ secrets.FC_KAGGLE_COLLAB1_USERNAME }}
-      FC_KAGGLE_COLLAB2_API_TOKEN: ${{ secrets.FC_KAGGLE_COLLAB2_API_TOKEN }}
-      FC_KAGGLE_COLLAB2_USERNAME: ${{ secrets.FC_KAGGLE_COLLAB2_USERNAME }}
+    timeout-minutes: 10
 
     steps:
       - name: Checkout public worker
@@ -38,17 +33,63 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Install bounded Kaggle tooling
+      - name: Enforce public-worker provider boundary
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check --quiet "kaggle>=1.8,<2"
+          python - <<'PY'
+          from pathlib import Path
+          workflow=Path(".github/workflows/v8-cloud-accelerator.yml").read_text(encoding="utf-8")
+          script=Path("scripts/v8_cloud_accelerator.py").read_text(encoding="utf-8")
+          forbidden=(
+              "FC_KAGGLE_",
+              "KAGGLE_API_TOKEN",
+              "KAGGLE_USERNAME",
+              "kernels push",
+              "kaggle quota",
+          )
+          combined=workflow+"\n"+script
+          for marker in forbidden:
+              if marker in combined:
+                  raise SystemExit(f"PUBLIC_WORKER_PROVIDER_BOUNDARY_FAIL:{marker}")
+          assert '"authority": "FREECOMPUTE_ONLY"' in script
+          assert '"gpu_verified": False' in script
+          print("PUBLIC_WORKER_PROVIDER_BOUNDARY=PASS")
+          PY
 
-      - name: Run public CPU plus quota-gated Kaggle GPU acceleration
+      - name: Run public synthetic CPU evidence farm
         shell: bash
         run: |
           set -euo pipefail
           python scripts/v8_cloud_accelerator.py
+
+      - name: Validate bounded evidence manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          payload=json.loads(Path("evidence/v8-cloud/latest.json").read_text(encoding="utf-8"))
+          required=(
+              "source","checkpoint","candidate_sha","workload_family","support_only",
+              "authoritative_merge_gate","private_source_used","paid_compute_used",
+              "credential_boundary","runtime_type","cpu_count","gpu_count",
+              "gpu_verified","quota_before","quota_after","scenario_count",
+              "pass_rate","confidence_interval","artifact_hash","generated_at","expires_at",
+          )
+          missing=[key for key in required if key not in payload]
+          if missing:
+              raise SystemExit("PUBLIC_EVIDENCE_MANIFEST_MISSING:"+",".join(missing))
+          assert payload["support_only"] is True
+          assert payload["authoritative_merge_gate"] is False
+          assert payload["private_source_used"] is False
+          assert payload["paid_compute_used"] is False
+          assert payload["gpu_verified"] is False
+          assert payload["provider_compute"]["authority"] == "FREECOMPUTE_ONLY"
+          assert payload["github_hosted_cpu"]["wilson_lower_95"] >= 0.99
+          print("PUBLIC_EVIDENCE_MANIFEST=PASS")
+          PY
 
       - name: Persist sanitized accelerator evidence
         if: github.ref_name == 'main'
@@ -76,7 +117,7 @@ jobs:
               exit 0
             fi
 
-            git commit -m "evidence: refresh V8 cloud accelerator"
+            git commit -m "evidence: refresh V8 public CPU support"
             if git push origin HEAD:main; then
               echo "V8_CLOUD_EVIDENCE_PERSISTED=PASS"
               exit 0
