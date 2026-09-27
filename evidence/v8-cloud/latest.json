@@ -1,8 +1,8 @@
 {
   "authoritative_merge_gate": false,
-  "generated_at": "2026-09-27T05:44:22.486130+00:00",
+  "generated_at": "2026-09-27T05:48:39.441722+00:00",
   "github_hosted_cpu": {
-    "elapsed_seconds": 0.08484020699999917,
+    "elapsed_seconds": 0.08232604599999149,
     "paid_compute_used": false,
     "pass_rate": 1.0,
     "private_source_used": false,
@@ -16,13 +16,19 @@
     "accelerator": "NvidiaTeslaT4",
     "credential_presence": {
       "collab-1": {
-        "configured": false
+        "api_token_configured": false,
+        "eligible_for_attempt": false,
+        "username_secret_configured": false
       },
       "collab-2": {
-        "configured": false
+        "api_token_configured": false,
+        "eligible_for_attempt": false,
+        "username_secret_configured": false
       },
       "owner": {
-        "configured": false
+        "api_token_configured": false,
+        "eligible_for_attempt": false,
+        "username_secret_configured": false
       }
     },
     "failures": 0,
@@ -42,7 +48,7 @@
     "next_index": 0,
     "selected_lanes": []
   },
-  "run_id": "36298057353",
+  "run_id": "36298249171",
   "schema_version": 1,
   "scope": "SHOREA_V8_CP3_PLUS_SUPPORT_ONLY",
   "source": "FREECOMPUTE_PUBLIC_WORKER",
