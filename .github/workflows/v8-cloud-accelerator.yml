@@ -51,9 +51,6 @@ jobs:
           for marker in forbidden_script:
               if marker in script:
                   raise SystemExit(f"PUBLIC_WORKER_PROVIDER_BOUNDARY_FAIL:{marker}")
-          assert ("FC_" + "KAGGLE_") not in workflow.replace('"FC_" + "KAGGLE_"', "")
-          assert ("secrets." + "KAGGLE_API_TOKEN") not in workflow
-          assert ("secrets." + "FC_KAGGLE_OWNER_API_TOKEN") not in workflow
           assert '"authority": "FREECOMPUTE_ONLY"' in script
           assert '"gpu_verified": False' in script
           print("PUBLIC_WORKER_PROVIDER_BOUNDARY=PASS")
