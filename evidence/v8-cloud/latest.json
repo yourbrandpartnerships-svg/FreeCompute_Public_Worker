@@ -1,16 +1,82 @@
 {
   "authoritative_merge_gate": false,
-  "generated_at": "2026-09-27T06:01:12.077789+00:00",
+  "generated_at": "2026-09-27T06:26:27.814291+00:00",
   "github_hosted_cpu": {
-    "elapsed_seconds": 0.04278557499999991,
+    "elapsed_seconds": 0.1820643920000009,
+    "families": [
+      {
+        "checkpoint": "V8-CP3",
+        "pass_rate": 1.0,
+        "scenarios": 25000,
+        "violations": 0,
+        "wilson_lower_95": 0.9998463652544343,
+        "workload": "agent_provider_learning"
+      },
+      {
+        "checkpoint": "V8-CP4",
+        "pass_rate": 1.0,
+        "scenarios": 25000,
+        "violations": 0,
+        "wilson_lower_95": 0.9998463652544343,
+        "workload": "revenue_product_ranking"
+      },
+      {
+        "checkpoint": "V8-CP5",
+        "pass_rate": 1.0,
+        "scenarios": 25000,
+        "violations": 0,
+        "wilson_lower_95": 0.9998463652544343,
+        "workload": "market_reputation_trend"
+      },
+      {
+        "checkpoint": "V8-CP6",
+        "pass_rate": 1.0,
+        "scenarios": 25000,
+        "violations": 0,
+        "wilson_lower_95": 0.9998463652544343,
+        "workload": "ops_truth_reconciliation"
+      },
+      {
+        "checkpoint": "V8-CP7",
+        "pass_rate": 1.0,
+        "scenarios": 25000,
+        "violations": 0,
+        "wilson_lower_95": 0.9998463652544343,
+        "workload": "failure_anomaly_hardening"
+      },
+      {
+        "checkpoint": "V8-CP8",
+        "pass_rate": 1.0,
+        "scenarios": 25000,
+        "violations": 0,
+        "wilson_lower_95": 0.9998463652544343,
+        "workload": "canary_incrementality"
+      },
+      {
+        "checkpoint": "V8-CP9",
+        "pass_rate": 1.0,
+        "scenarios": 25000,
+        "violations": 0,
+        "wilson_lower_95": 0.9998463652544343,
+        "workload": "reconciliation_drift"
+      },
+      {
+        "checkpoint": "V8-CP10",
+        "pass_rate": 1.0,
+        "scenarios": 25000,
+        "violations": 0,
+        "wilson_lower_95": 0.9998463652544343,
+        "workload": "evidence_monitoring_decay"
+      }
+    ],
     "paid_compute_used": false,
     "pass_rate": 1.0,
     "private_source_used": false,
-    "scenarios": 100000,
+    "scenarios": 200000,
     "status": "PASS",
     "violations": 0,
-    "wilson_lower_95": 0.9999615868874171,
-    "workload": "PUBLIC_SYNTHETIC_ROUTING_AND_EVIDENCE_STRESS"
+    "wilson_lower_95": 0.9999807930748096,
+    "workload": "PUBLIC_SYNTHETIC_CP3_PLUS_EVIDENCE_FARM"
   },
   "kaggle_gpu": {
     "accelerator": "NvidiaTeslaT4",
@@ -32,13 +98,13 @@
       }
     },
     "failures": 0,
-    "max_runtime_seconds_per_lane": 480,
+    "max_runtime_seconds_per_lane": 600,
     "min_post_run_hours": 0.5,
     "passes": 0,
     "reserve_fraction": 0.15,
     "results": [],
     "skips": 0,
-    "target_training_seconds_per_lane": 240
+    "target_training_seconds_per_lane": 420
   },
   "paid_compute_used": false,
   "private_source_used": false,
@@ -49,10 +115,48 @@
     "next_index": 0,
     "selected_lanes": []
   },
-  "run_id": "36298856674",
+  "run_id": "36300088074",
   "schema_version": 1,
   "scope": "SHOREA_V8_CP3_PLUS_SUPPORT_ONLY",
   "source": "FREECOMPUTE_PUBLIC_WORKER",
   "status": "PASS_CPU_GPU_BLOCKED",
+  "workload_farm": {
+    "families": [
+      {
+        "checkpoint": "V8-CP3",
+        "workload": "agent_provider_learning"
+      },
+      {
+        "checkpoint": "V8-CP4",
+        "workload": "revenue_product_ranking"
+      },
+      {
+        "checkpoint": "V8-CP5",
+        "workload": "market_reputation_trend"
+      },
+      {
+        "checkpoint": "V8-CP6",
+        "workload": "ops_truth_reconciliation"
+      },
+      {
+        "checkpoint": "V8-CP7",
+        "workload": "failure_anomaly_hardening"
+      },
+      {
+        "checkpoint": "V8-CP8",
+        "workload": "canary_incrementality"
+      },
+      {
+        "checkpoint": "V8-CP9",
+        "workload": "reconciliation_drift"
+      },
+      {
+        "checkpoint": "V8-CP10",
+        "workload": "evidence_monitoring_decay"
+      }
+    ],
+    "next_workload_index": 0,
+    "selected_gpu_workloads": []
+  },
   "zero_spend_required": true
 }
