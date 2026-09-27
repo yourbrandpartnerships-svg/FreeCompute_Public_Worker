@@ -1,8 +1,8 @@
 {
   "authoritative_merge_gate": false,
-  "generated_at": "2026-09-27T09:17:08.139203+00:00",
+  "generated_at": "2026-09-27T10:30:39.853916+00:00",
   "github_hosted_cpu": {
-    "elapsed_seconds": 0.18683954599999808,
+    "elapsed_seconds": 0.18406074399999284,
     "families": [
       {
         "checkpoint": "V8-CP3",
