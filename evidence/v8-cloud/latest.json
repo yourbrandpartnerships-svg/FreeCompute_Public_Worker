@@ -1,8 +1,8 @@
 {
   "authoritative_merge_gate": false,
-  "generated_at": "2026-09-27T16:54:57.182942+00:00",
+  "generated_at": "2026-09-27T20:07:02.530945+00:00",
   "github_hosted_cpu": {
-    "elapsed_seconds": 0.18696334799999903,
+    "elapsed_seconds": 0.18531950600000613,
     "families": [
       {
         "checkpoint": "V8-CP3",
@@ -115,7 +115,7 @@
     "next_index": 0,
     "selected_lanes": []
   },
-  "run_id": "36334975085",
+  "run_id": "36346825892",
   "schema_version": 1,
   "scope": "SHOREA_V8_CP3_PLUS_SUPPORT_ONLY",
   "source": "FREECOMPUTE_PUBLIC_WORKER",
