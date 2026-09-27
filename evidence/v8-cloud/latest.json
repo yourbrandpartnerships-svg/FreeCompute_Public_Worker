@@ -1,0 +1,51 @@
+{
+  "authoritative_merge_gate": false,
+  "generated_at": "2026-09-27T05:43:54.883421+00:00",
+  "github_hosted_cpu": {
+    "elapsed_seconds": 0.08527899799999972,
+    "paid_compute_used": false,
+    "pass_rate": 1.0,
+    "private_source_used": false,
+    "scenarios": 100000,
+    "status": "PASS",
+    "violations": 0,
+    "wilson_lower_95": 0.9999615868874171,
+    "workload": "PUBLIC_SYNTHETIC_ROUTING_AND_EVIDENCE_STRESS"
+  },
+  "kaggle_gpu": {
+    "accelerator": "NvidiaTeslaT4",
+    "credential_presence": {
+      "collab-1": {
+        "configured": false
+      },
+      "collab-2": {
+        "configured": false
+      },
+      "owner": {
+        "configured": false
+      }
+    },
+    "failures": 0,
+    "max_runtime_seconds_per_lane": 480,
+    "min_post_run_hours": 0.5,
+    "passes": 0,
+    "reserve_fraction": 0.15,
+    "results": [],
+    "skips": 0
+  },
+  "paid_compute_used": false,
+  "private_source_used": false,
+  "rotation": {
+    "automatic_identity_failover": false,
+    "identity_assignment_for_new_tasks_only": true,
+    "mode": "ROUND_ROBIN_NEW_TASKS_ONLY",
+    "next_index": 0,
+    "selected_lanes": []
+  },
+  "run_id": "36298036150",
+  "schema_version": 1,
+  "scope": "SHOREA_V8_CP3_PLUS_SUPPORT_ONLY",
+  "source": "FREECOMPUTE_PUBLIC_WORKER",
+  "status": "PASS_CPU_GPU_BLOCKED",
+  "zero_spend_required": true
+}
