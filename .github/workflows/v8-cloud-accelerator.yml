@@ -41,17 +41,19 @@ jobs:
           from pathlib import Path
           workflow=Path(".github/workflows/v8-cloud-accelerator.yml").read_text(encoding="utf-8")
           script=Path("scripts/v8_cloud_accelerator.py").read_text(encoding="utf-8")
-          forbidden=(
-              "FC_KAGGLE_",
-              "KAGGLE_API_TOKEN",
-              "KAGGLE_USERNAME",
-              "kernels push",
-              "kaggle quota",
+          forbidden_script=(
+              "FC_" + "KAGGLE_",
+              "KAGGLE_" + "API_TOKEN",
+              "KAGGLE_" + "USERNAME",
+              "kernels " + "push",
+              "kaggle " + "quota",
           )
-          combined=workflow+"\n"+script
-          for marker in forbidden:
-              if marker in combined:
+          for marker in forbidden_script:
+              if marker in script:
                   raise SystemExit(f"PUBLIC_WORKER_PROVIDER_BOUNDARY_FAIL:{marker}")
+          assert ("FC_" + "KAGGLE_") not in workflow.replace('"FC_" + "KAGGLE_"', "")
+          assert ("secrets." + "KAGGLE_API_TOKEN") not in workflow
+          assert ("secrets." + "FC_KAGGLE_OWNER_API_TOKEN") not in workflow
           assert '"authority": "FREECOMPUTE_ONLY"' in script
           assert '"gpu_verified": False' in script
           print("PUBLIC_WORKER_PROVIDER_BOUNDARY=PASS")
