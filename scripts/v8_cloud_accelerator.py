@@ -28,6 +28,7 @@ MAX_PARALLEL_KAGGLE = 2
 GPU_RESERVE_FRACTION = 0.15
 GPU_MIN_POST_RUN_HOURS = 0.50
 GPU_TIMEOUT_SECONDS = 480
+GPU_TARGET_TRAIN_SECONDS = 240
 GPU_ACCELERATOR = "NvidiaTeslaT4"
 
 
@@ -279,7 +280,9 @@ try:
         last=None
         seen=0
         train_start=time.perf_counter()
-        for step in range(180):
+        step=0
+        target_seconds=240
+        while step < 5000 and (time.perf_counter()-train_start) < target_seconds:
             idx=(step*batch) % n
             xb=x[idx:idx+batch]
             yb=y[idx:idx+batch]
@@ -295,6 +298,7 @@ try:
                 first=float(loss.detach().cpu())
             last=float(loss.detach().cpu())
             seen += int(xb.shape[0])
+            step += 1
         torch.cuda.synchronize()
         elapsed=max(time.perf_counter()-train_start,1e-9)
         result["training_loss_start"]=first
@@ -552,6 +556,7 @@ def main() -> int:
             "reserve_fraction": GPU_RESERVE_FRACTION,
             "min_post_run_hours": GPU_MIN_POST_RUN_HOURS,
             "max_runtime_seconds_per_lane": GPU_TIMEOUT_SECONDS,
+            "target_training_seconds_per_lane": GPU_TARGET_TRAIN_SECONDS,
             "credential_presence": secret_status,
             "results": gpu_results,
             "passes": gpu_passes,
