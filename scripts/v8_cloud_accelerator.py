@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import base64
 import concurrent.futures
 import hashlib
 import json
 import math
 import os
 import random
+import re
 import shutil
 import subprocess
 import tempfile
@@ -102,6 +104,57 @@ def _secret_pair(lane: str) -> tuple[str | None, str | None]:
     token = (os.getenv(f"FC_KAGGLE_{suffix}_API_TOKEN") or "").strip() or None
     username = (os.getenv(f"FC_KAGGLE_{suffix}_USERNAME") or "").strip() or None
     return token, username
+
+
+def _safe_username(value: Any) -> str | None:
+    if isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_-]{2,80}", value):
+        return value
+    return None
+
+
+def _username_from_token(token: str) -> str | None:
+    parts = token.split(".")
+    if len(parts) != 3:
+        return None
+    try:
+        payload = parts[1] + "=" * (-len(parts[1]) % 4)
+        data = json.loads(base64.urlsafe_b64decode(payload.encode("ascii")).decode("utf-8"))
+    except Exception:
+        return None
+    if not isinstance(data, dict):
+        return None
+    for key in ("username", "preferred_username", "kaggle_username"):
+        username = _safe_username(data.get(key))
+        if username:
+            return username
+    return None
+
+
+def _resolve_username(env: dict[str, str], explicit: str | None) -> str | None:
+    username = _safe_username(explicit)
+    if username:
+        return username
+
+    rc, out, _ = _run(
+        ["kaggle", "auth", "print-access-token", "--expiration", "5m"],
+        env,
+        timeout=45,
+    )
+    if rc == 0:
+        lines = [line.strip() for line in out.splitlines() if line.strip()]
+        if lines:
+            username = _username_from_token(lines[-1])
+            if username:
+                return username
+
+    rc, out, err = _run(["kaggle", "config", "view"], env, timeout=30)
+    if rc == 0:
+        text = out + "\n" + err
+        match = re.search(r"(?im)^\s*username\s*[:=]\s*([A-Za-z0-9_-]{2,80})\s*$", text)
+        if match:
+            return _safe_username(match.group(1))
+
+    return None
 
 
 def _run(cmd: list[str], env: dict[str, str], timeout: int, cwd: str | None = None) -> tuple[int, str, str]:
@@ -275,8 +328,17 @@ def _status_from_text(text: str) -> str:
     return "UNKNOWN"
 
 
-def _run_gpu_lane(lane: str, token: str, username: str, run_id: str) -> dict[str, Any]:
-    env = _lane_env(token, username)
+def _run_gpu_lane(lane: str, token: str, username: str | None, run_id: str) -> dict[str, Any]:
+    env = _lane_env(token, username or "")
+    username = _resolve_username(env, username)
+    if not username:
+        return {
+            "lane": lane,
+            "status": "SKIP",
+            "reason": "KAGGLE_USERNAME_UNRESOLVED",
+            "paid_compute_used": False,
+        }
+    env["KAGGLE_USERNAME"] = username
     quota_before = _quota(env)
     safe, reason = _gpu_safe(quota_before)
     if not safe:
@@ -415,10 +477,10 @@ def main() -> int:
 
     cpu = run_cpu_support()
 
-    lane_credentials: dict[str, tuple[str, str]] = {}
+    lane_credentials: dict[str, tuple[str, str | None]] = {}
     for lane in LANES:
         token, username = _secret_pair(lane)
-        if token and username:
+        if token:
             lane_credentials[lane] = (token, username)
 
     cursor = int(state.get("next_index") or 0) % len(LANES)
@@ -455,12 +517,14 @@ def main() -> int:
     })
     _write_json(STATE_PATH, state)
 
-    secret_status = {
-        lane: {
-            "configured": lane in lane_credentials,
+    secret_status = {}
+    for lane in LANES:
+        token, username = _secret_pair(lane)
+        secret_status[lane] = {
+            "api_token_configured": bool(token),
+            "username_secret_configured": bool(username),
+            "eligible_for_attempt": bool(token),
         }
-        for lane in LANES
-    }
 
     gpu_passes = sum(1 for row in gpu_results if row.get("status") == "PASS")
     gpu_skips = sum(1 for row in gpu_results if row.get("status") == "SKIP")
