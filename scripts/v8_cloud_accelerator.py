@@ -27,9 +27,20 @@ ROTATION_MODE = "ROUND_ROBIN_NEW_TASKS_ONLY"
 MAX_PARALLEL_KAGGLE = 2
 GPU_RESERVE_FRACTION = 0.15
 GPU_MIN_POST_RUN_HOURS = 0.50
-GPU_TIMEOUT_SECONDS = 480
-GPU_TARGET_TRAIN_SECONDS = 240
+GPU_TIMEOUT_SECONDS = 600
+GPU_TARGET_TRAIN_SECONDS = 420
 GPU_ACCELERATOR = "NvidiaTeslaT4"
+
+WORKLOAD_FAMILIES = (
+    {"checkpoint":"V8-CP3","name":"agent_provider_learning","dimensions":160,"hidden":384,"classes":8},
+    {"checkpoint":"V8-CP4","name":"revenue_product_ranking","dimensions":192,"hidden":384,"classes":12},
+    {"checkpoint":"V8-CP5","name":"market_reputation_trend","dimensions":224,"hidden":448,"classes":10},
+    {"checkpoint":"V8-CP6","name":"ops_truth_reconciliation","dimensions":256,"hidden":512,"classes":8},
+    {"checkpoint":"V8-CP7","name":"failure_anomaly_hardening","dimensions":288,"hidden":512,"classes":6},
+    {"checkpoint":"V8-CP8","name":"canary_incrementality","dimensions":192,"hidden":384,"classes":6},
+    {"checkpoint":"V8-CP9","name":"reconciliation_drift","dimensions":224,"hidden":448,"classes":8},
+    {"checkpoint":"V8-CP10","name":"evidence_monitoring_decay","dimensions":160,"hidden":320,"classes":5},
+)
 
 
 def utcnow() -> str:
@@ -62,34 +73,64 @@ def _wilson_lower(successes: int, total: int, z: float = 1.959963984540054) -> f
 
 def run_cpu_support() -> dict[str, Any]:
     started = time.perf_counter()
-    rng = random.Random(20260927)
-    violations = 0
-    scenarios = 100000
+    family_results = []
+    total_scenarios = 0
+    total_violations = 0
 
-    for _ in range(scenarios):
-        quality = rng.random()
-        health = rng.random()
-        freshness = rng.random()
-        latency_ms = rng.randint(5, 2000)
-        zero_spend = rng.random() > 0.12
-        public = rng.random() > 0.05
-        eligible = zero_spend and public
-        score = quality * 0.45 + health * 0.30 + freshness * 0.25 - latency_ms / 20000.0
-        score2 = quality * 0.45 + health * 0.30 + freshness * 0.25 - latency_ms / 20000.0
-        if score != score2:
-            violations += 1
-        if eligible and (not zero_spend or not public):
-            violations += 1
+    for family_index, family in enumerate(WORKLOAD_FAMILIES):
+        rng = random.Random(20260927 + family_index * 101)
+        violations = 0
+        scenarios = 25000
 
-    successes = scenarios - violations
+        for _ in range(scenarios):
+            quality = rng.random()
+            health = rng.random()
+            freshness = rng.random()
+            latency_ms = rng.randint(5, 2000)
+            zero_spend = rng.random() > 0.12
+            public = rng.random() > 0.05
+            eligible = zero_spend and public
+
+            family_weight = 1.0 + family_index / 20.0
+            score = (
+                quality * 0.45
+                + health * 0.30
+                + freshness * 0.25
+                - latency_ms / (20000.0 * family_weight)
+            )
+            score2 = (
+                quality * 0.45
+                + health * 0.30
+                + freshness * 0.25
+                - latency_ms / (20000.0 * family_weight)
+            )
+            if score != score2:
+                violations += 1
+            if eligible and (not zero_spend or not public):
+                violations += 1
+
+        successes = scenarios - violations
+        family_results.append({
+            "checkpoint": family["checkpoint"],
+            "workload": family["name"],
+            "scenarios": scenarios,
+            "violations": violations,
+            "pass_rate": successes / scenarios,
+            "wilson_lower_95": _wilson_lower(successes, scenarios),
+        })
+        total_scenarios += scenarios
+        total_violations += violations
+
+    successes = total_scenarios - total_violations
     elapsed = time.perf_counter() - started
     return {
-        "status": "PASS" if violations == 0 else "FAIL",
-        "workload": "PUBLIC_SYNTHETIC_ROUTING_AND_EVIDENCE_STRESS",
-        "scenarios": scenarios,
-        "violations": violations,
-        "pass_rate": successes / scenarios,
-        "wilson_lower_95": _wilson_lower(successes, scenarios),
+        "status": "PASS" if total_violations == 0 else "FAIL",
+        "workload": "PUBLIC_SYNTHETIC_CP3_PLUS_EVIDENCE_FARM",
+        "scenarios": total_scenarios,
+        "violations": total_violations,
+        "pass_rate": successes / total_scenarios,
+        "wilson_lower_95": _wilson_lower(successes, total_scenarios),
+        "families": family_results,
         "elapsed_seconds": elapsed,
         "paid_compute_used": False,
         "private_source_used": False,
@@ -237,12 +278,16 @@ def _gpu_safe(quota: dict[str, Any]) -> tuple[bool, str]:
     return True, "GPU_QUOTA_SAFE"
 
 
-def _gpu_program(run_id: str, lane: str) -> str:
+def _gpu_program(run_id: str, lane: str, workload: dict[str, Any]) -> str:
+    workload_json = json.dumps(workload, sort_keys=True)
     return f'''import json, os, time
+workload=json.loads({workload_json!r})
 result={{
     "ok":False,
     "run_id":{run_id!r},
     "lane":{lane!r},
+    "checkpoint":workload["checkpoint"],
+    "workload":workload["name"],
     "cuda":False,
     "device_count":0,
     "device_name":None,
@@ -261,16 +306,19 @@ try:
         result["device_name"]=torch.cuda.get_device_name(0)
 
         n=65536
-        d=128
-        classes=8
+        d=int(workload["dimensions"])
+        classes=int(workload["classes"])
+        hidden=int(workload["hidden"])
         x=torch.randn(n,d,device=device)
         true_w=torch.randn(d,classes,device=device)
         y=(x @ true_w).argmax(dim=1)
 
         model=torch.nn.Sequential(
-            torch.nn.Linear(d,256),
+            torch.nn.Linear(d,hidden),
             torch.nn.ReLU(),
-            torch.nn.Linear(256,classes),
+            torch.nn.Linear(hidden,hidden//2),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden//2,classes),
         ).to(device)
         opt=torch.optim.AdamW(model.parameters(),lr=2e-3)
         loss_fn=torch.nn.CrossEntropyLoss()
@@ -281,7 +329,7 @@ try:
         seen=0
         train_start=time.perf_counter()
         step=0
-        target_seconds=240
+        target_seconds=420
         while step < 5000 and (time.perf_counter()-train_start) < target_seconds:
             idx=(step*batch) % n
             xb=x[idx:idx+batch]
@@ -332,12 +380,20 @@ def _status_from_text(text: str) -> str:
     return "UNKNOWN"
 
 
-def _run_gpu_lane(lane: str, token: str, username: str | None, run_id: str) -> dict[str, Any]:
+def _run_gpu_lane(
+    lane: str,
+    token: str,
+    username: str | None,
+    run_id: str,
+    workload: dict[str, Any],
+) -> dict[str, Any]:
     env = _lane_env(token, username or "")
     username = _resolve_username(env, username)
     if not username:
         return {
             "lane": lane,
+            "checkpoint": workload["checkpoint"],
+            "workload": workload["name"],
             "status": "SKIP",
             "reason": "KAGGLE_USERNAME_UNRESOLVED",
             "paid_compute_used": False,
@@ -348,6 +404,8 @@ def _run_gpu_lane(lane: str, token: str, username: str | None, run_id: str) -> d
     if not safe:
         return {
             "lane": lane,
+            "checkpoint": workload["checkpoint"],
+            "workload": workload["name"],
             "status": "SKIP",
             "reason": reason,
             "quota_before": quota_before,
@@ -362,7 +420,7 @@ def _run_gpu_lane(lane: str, token: str, username: str | None, run_id: str) -> d
             slug = f"v8-cloud-{run_id[:10]}-{uuid.uuid4().hex[:8]}".lower()
             ref = f"{username}/{slug}"
 
-            (root / "main.py").write_text(_gpu_program(run_id, lane), encoding="utf-8")
+            (root / "main.py").write_text(_gpu_program(run_id, lane, workload), encoding="utf-8")
             metadata = {
                 "id": ref,
                 "title": slug,
@@ -392,6 +450,8 @@ def _run_gpu_lane(lane: str, token: str, username: str | None, run_id: str) -> d
             if rc != 0:
                 return {
                     "lane": lane,
+                    "checkpoint": workload["checkpoint"],
+                    "workload": workload["name"],
                     "status": "FAIL",
                     "reason": "KAGGLE_KERNEL_PUSH_FAILED",
                     "error_tail": err[-400:],
@@ -412,6 +472,8 @@ def _run_gpu_lane(lane: str, token: str, username: str | None, run_id: str) -> d
         if status != "COMPLETED":
             return {
                 "lane": lane,
+                "checkpoint": workload["checkpoint"],
+                "workload": workload["name"],
                 "status": "FAIL",
                 "reason": f"KAGGLE_{status}",
                 "quota_before": quota_before,
@@ -427,6 +489,8 @@ def _run_gpu_lane(lane: str, token: str, username: str | None, run_id: str) -> d
             if rc != 0:
                 return {
                     "lane": lane,
+                    "checkpoint": workload["checkpoint"],
+                    "workload": workload["name"],
                     "status": "FAIL",
                     "reason": "KAGGLE_OUTPUT_FAILED",
                     "error_tail": err[-400:],
@@ -437,6 +501,8 @@ def _run_gpu_lane(lane: str, token: str, username: str | None, run_id: str) -> d
             if result_file is None:
                 return {
                     "lane": lane,
+                    "checkpoint": workload["checkpoint"],
+                    "workload": workload["name"],
                     "status": "FAIL",
                     "reason": "RESULT_ARTIFACT_MISSING",
                     "quota_before": quota_before,
@@ -447,6 +513,8 @@ def _run_gpu_lane(lane: str, token: str, username: str | None, run_id: str) -> d
         quota_after = _quota(env)
         return {
             "lane": lane,
+            "checkpoint": workload["checkpoint"],
+            "workload": workload["name"],
             "status": "PASS" if result.get("ok") is True and result.get("cuda") is True else "FAIL",
             "reason": "CUDA_VERIFIED" if result.get("ok") is True and result.get("cuda") is True else "CUDA_RESULT_INVALID",
             "accelerator_requested": GPU_ACCELERATOR,
@@ -472,12 +540,13 @@ def main() -> int:
         {
             "mode": ROTATION_MODE,
             "next_index": 0,
+            "next_workload_index": 0,
             "last_run_id": None,
             "updated_at": None,
         },
     )
     if state.get("mode") != ROTATION_MODE:
-        state = {"mode": ROTATION_MODE, "next_index": 0, "last_run_id": None, "updated_at": None}
+        state = {"mode": ROTATION_MODE, "next_index": 0, "next_workload_index": 0, "last_run_id": None, "updated_at": None}
 
     cpu = run_cpu_support()
 
@@ -491,19 +560,34 @@ def main() -> int:
     ordered = [LANES[(cursor + offset) % len(LANES)] for offset in range(len(LANES))]
     selected = [lane for lane in ordered if lane in lane_credentials][:MAX_PARALLEL_KAGGLE]
 
+    workload_cursor = int(state.get("next_workload_index") or 0) % len(WORKLOAD_FAMILIES)
+    selected_workloads = [
+        WORKLOAD_FAMILIES[(workload_cursor + offset) % len(WORKLOAD_FAMILIES)]
+        for offset in range(len(selected))
+    ]
+
     gpu_results: list[dict[str, Any]] = []
     if selected:
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(selected)) as pool:
             futures = {
-                pool.submit(_run_gpu_lane, lane, *lane_credentials[lane], run_id): lane
-                for lane in selected
+                pool.submit(
+                    _run_gpu_lane,
+                    lane,
+                    *lane_credentials[lane],
+                    run_id,
+                    workload,
+                ): (lane, workload)
+                for lane, workload in zip(selected, selected_workloads)
             }
             for future in concurrent.futures.as_completed(futures):
+                lane, workload = futures[future]
                 try:
                     gpu_results.append(future.result())
                 except Exception as exc:
                     gpu_results.append({
-                        "lane": futures[future],
+                        "lane": lane,
+                        "checkpoint": workload["checkpoint"],
+                        "workload": workload["name"],
                         "status": "FAIL",
                         "reason": type(exc).__name__,
                         "paid_compute_used": False,
@@ -512,11 +596,15 @@ def main() -> int:
 
         last_selected = selected[-1]
         state["next_index"] = (LANES.index(last_selected) + 1) % len(LANES)
+        state["next_workload_index"] = (
+            workload_cursor + len(selected_workloads)
+        ) % len(WORKLOAD_FAMILIES)
 
     state.update({
         "mode": ROTATION_MODE,
         "last_run_id": run_id,
         "last_selected_lanes": selected,
+        "last_selected_workloads": [row["name"] for row in selected_workloads],
         "updated_at": utcnow(),
     })
     _write_json(STATE_PATH, state)
@@ -551,6 +639,17 @@ def main() -> int:
             "identity_assignment_for_new_tasks_only": True,
         },
         "github_hosted_cpu": cpu,
+        "workload_farm": {
+            "families": [
+                {"checkpoint": row["checkpoint"], "workload": row["name"]}
+                for row in WORKLOAD_FAMILIES
+            ],
+            "next_workload_index": state.get("next_workload_index", 0),
+            "selected_gpu_workloads": [
+                {"checkpoint": row["checkpoint"], "workload": row["name"]}
+                for row in selected_workloads
+            ],
+        },
         "kaggle_gpu": {
             "accelerator": GPU_ACCELERATOR,
             "reserve_fraction": GPU_RESERVE_FRACTION,
@@ -584,6 +683,9 @@ def main() -> int:
         "gpu_skips": gpu_skips,
         "gpu_failures": gpu_failures,
         "rotation_mode": ROTATION_MODE,
+        "selected_gpu_workloads": [
+            row["checkpoint"] + ":" + row["name"] for row in selected_workloads
+        ],
     }, sort_keys=True))
 
     return 0 if cpu["status"] == "PASS" else 2
