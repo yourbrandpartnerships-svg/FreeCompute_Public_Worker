@@ -9,7 +9,7 @@ on:
       - scripts/v8_cloud_accelerator.py
       - .github/workflows/v8-cloud-accelerator.yml
   schedule:
-    - cron: "11 * * * *"
+    - cron: "11,41 * * * *"
   workflow_dispatch:
 
 permissions:
