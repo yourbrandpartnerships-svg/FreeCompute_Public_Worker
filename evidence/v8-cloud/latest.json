@@ -1,5 +1,5 @@
 {
-  "artifact_hash": "5342f9649ed99900ee6b7498d9a970c5f359e96057501cfa5262dda89a8c5de7",
+  "artifact_hash": "261e4b04c19e2bb74ce27ed75f9d7dd3bd61838bcdbd355950a7fc23a38f3284",
   "authoritative_merge_gate": false,
   "candidate_binding": "SHA_INDEPENDENT_SYNTHETIC_FAMILY",
   "candidate_sha": null,
@@ -11,10 +11,10 @@
   },
   "cpu_count": 4,
   "credential_boundary": "NO_PROVIDER_CREDENTIALS",
-  "expires_at": "2026-11-07T01:21:55.826602+00:00",
-  "generated_at": "2026-11-06T22:21:55.826602+00:00",
+  "expires_at": "2026-11-07T05:20:59.258283+00:00",
+  "generated_at": "2026-11-07T02:20:59.258283+00:00",
   "github_hosted_cpu": {
-    "elapsed_seconds": 0.14497750499998574,
+    "elapsed_seconds": 0.18130095800000845,
     "families": [
       {
         "checkpoint": "V8-CP3",
@@ -101,10 +101,10 @@
     "note": "This public worker never authenticates to a provider. GPU/provider support evidence must be produced by FreeCompute and ingested through a separate bounded support-evidence path.",
     "provider_credentials_present": false
   },
-  "public_worker_sha": "452c57b7d5730f61c12b23f8d5670f70753a52fe",
+  "public_worker_sha": "32f35731c97e066547d456486866abe1241b33d9",
   "quota_after": null,
   "quota_before": null,
-  "run_id": "42304131874",
+  "run_id": "42328787208",
   "runtime_type": "GITHUB_HOSTED_PUBLIC_CPU",
   "scenario_count": 200000,
   "schema_version": 2,
